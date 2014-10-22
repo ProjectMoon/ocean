@@ -27,11 +27,11 @@ void simulation_step(int rank, grid_square square);
 /*
  * Execute the master thread
  */
-void master();
+void master(int rank);
 
 /*
  * Execute the child thread.
  */
-void child();
+void child(int rank);
 
 #endif
