@@ -1,8 +1,13 @@
 #include <mpi.h>
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <unistd.h>
 #include "ocean.h"
+#include "logging.h"
+
+//Defines: event types for various oceanic commuication
+#define EVENT_FISH 0
+#define EVENT_BOAT 1
 
 int main (int argc, char** argv) {
     int rank, size;
@@ -15,7 +20,7 @@ int main (int argc, char** argv) {
     MPI_Comm_rank(grid, &rank);
 
     work(rank, grid);
-
+    
     MPI_Finalize();
     return 0;
 }
@@ -31,7 +36,7 @@ void create_communicator(MPI_Comm input, MPI_Comm *comm, int x, int y) {
 }
 
 void work(int rank, MPI_Comm grid) {
-    printf("I am the child\n");
+    write_line("I am the child\n");
     int left, right, up, down;
 
     //Where am I?
@@ -63,8 +68,12 @@ void work(int rank, MPI_Comm grid) {
 }
 
 void simulation_step(grid_square square) {
-    printf("Coords are: %d, %d\n", square.x, square.y);
-    printf("Neighboys(u,d,l,r): %d, %d, %d, %d\n", square.up, square.down, square.left, square.right);
+    char str[80];
+    sprintf(str, "Coords are: %d, %d\n", square.x, square.y);
+    write_line(str);
+    sprintf(str, "Neighboys(u,d,l,r): %d, %d, %d, %d\n", square.up, square.down, square.left, square.right);
+    write_line(str);
+    
     //TODO receive info from neighbors
 
     if (square.has_net) {
@@ -73,6 +82,7 @@ void simulation_step(grid_square square) {
     }
 
     //TODO handle fish swimming (or no event if no fish)
+    
 
     //TODO handle boats chatting
 }

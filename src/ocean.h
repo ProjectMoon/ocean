@@ -2,6 +2,7 @@
 #define OCEAN_H
 
 #include <stdbool.h>
+#include <mpi.h>
 
 /*
  * fish: number of fish in the square. for each fish, swim away!
