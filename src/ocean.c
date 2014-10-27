@@ -9,39 +9,62 @@ int main (int argc, char** argv) {
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    
-    if (rank == 0) {
-        master(rank);
-    }
-    else {
-        child(rank);
-    }
+    MPI_Comm grid;
+
+    create_communicator(MPI_COMM_WORLD, &grid, 3, 3);
+    MPI_Comm_rank(grid, &rank);
+
+    work(rank, grid);
 
     MPI_Finalize();
     return 0;
 }
 
-void master(int rank) {
-    printf("I am the master\n");
+void create_communicator(MPI_Comm input, MPI_Comm *comm, int x, int y) {
+    //number of processors required is x * y
+    int num_dims = 2;
+    int dims[2] = { x, y };
+    int periods[2] = { 0, 0 };
+    int reorder = 0;
+    
+    MPI_Cart_create(input, num_dims, dims, periods, reorder, comm);
 }
 
-void child(int rank) {
-    print("I am the child\n");
+void work(int rank, MPI_Comm grid) {
+    printf("I am the child\n");
+    int left, right, up, down;
+
+    //Where am I?
+    int coords[2];
+    MPI_Cart_coords(grid, rank, 2, coords);
+
+    //Get neighbors. dim 0 = columns, dim 1 = rows
+    MPI_Cart_shift(grid, 0, 1, &up, &down);
+    MPI_Cart_shift(grid, 1, 1, &left, &right);
+    
     //TODO randomly determine these values
     grid_square square = {
         .has_net = false,
         .has_boat = false,
-        .fish = 5
+        .fish = 5,
+        .rank = rank,
+        .x = coords[0],
+        .y = coords[1],
+        .left = left,
+        .right = right,
+        .up = up,
+        .down = down
     };
     
     while (true) {
-        simulation_step(rank, square);
+        simulation_step(square);
         sleep(1);
     }
 }
 
-void simulation_step(int rank, grid_square square) {
+void simulation_step(grid_square square) {
+    printf("Coords are: %d, %d\n", square.x, square.y);
+    printf("Neighboys(u,d,l,r): %d, %d, %d, %d\n", square.up, square.down, square.left, square.right);
     //TODO receive info from neighbors
 
     if (square.has_net) {

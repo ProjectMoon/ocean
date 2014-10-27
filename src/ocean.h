@@ -14,7 +14,21 @@ typedef struct {
     bool has_net;
     int fish_caught;
     bool has_boat;
+
+    int rank;
+    int x;
+    int y;
+
+    int left;
+    int right;
+    int up;
+    int down;
 } grid_square;
+
+//ndims = 2
+//periods = 0
+//reorder = 0
+void create_communicator(MPI_Comm input, MPI_Comm *comm, int x, int y);
 
 /*
  * Execute a step of the simulation for a processor. Each processor
@@ -22,16 +36,11 @@ typedef struct {
  * messages from its neighbors, and then send them out to its
  * neighbors.
  */
-void simulation_step(int rank, grid_square square);
+void simulation_step(grid_square square);
 
 /*
- * Execute the master thread
+ * Do the thing.
  */
-void master(int rank);
-
-/*
- * Execute the child thread.
- */
-void child(int rank);
+void work(int rank, MPI_Comm grid);
 
 #endif
