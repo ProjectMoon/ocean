@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <assert.h>
 #include "ocean.h"
 #include "logging.h"
 
@@ -13,12 +14,14 @@
 
 int main (int argc, char** argv) {
     int rank, size;
-
+	int x_size = 3;
+	int y_size = 3;
+	
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm grid;
-
-    create_communicator(MPI_COMM_WORLD, &grid, 3, 3);
+	
+    create_communicator(MPI_COMM_WORLD, &grid, x_size, y_size);
     MPI_Comm_rank(grid, &rank);
 
     work(rank, grid);
@@ -67,8 +70,8 @@ int get_opposite(grid_square square, direction_t dir) {
     }
 }
 
-
 void work(int rank, MPI_Comm grid) {
+	
     //Where am I?
     int coords[2];
     MPI_Cart_coords(grid, rank, 2, coords);
@@ -80,13 +83,13 @@ void work(int rank, MPI_Comm grid) {
 
     //Randomly generate a number of fish (0 to 20). Modulus slightly
     //reduces randomness, but whatever.
-    srand(time(NULL));
+    srand(rank);
     int fish = rand() % 21;
     
     //TODO randomly determine these values
     grid_square square = {
-        .has_net = (rank % 3 == 0), //every 3rd sqaure has a net
-        .has_boat = false,
+        .has_net = (rank % 3 == 0), //every 3rd square has a net
+        .has_boat = (rank % 3 == 0),
         .fish = fish,
         .rank = rank,
         .x = coords[0],
@@ -107,13 +110,14 @@ void work(int rank, MPI_Comm grid) {
 
 void simulation_step(MPI_Comm grid, grid_square square) {
     //this really only covers fish that start in the square in the
-    //begining.
+    //beginning. -Should be okay, since moving fish will then be caught in the beginning
+	//of the next timestep
     if (square.has_net) {
         square.fish_caught += square.fish;
         square.fish = 0;
     }
 
-    //send fish swimming and receive incoming fish from neighbors
+    //send fish swimming and receive incoming fish from neighbours
     direction_t dir = rand() % 5;
     int fish_dest = get_adjacent(square, dir);
 
@@ -154,6 +158,18 @@ void simulation_step(MPI_Comm grid, grid_square square) {
         square.fish_caught += square.fish;
         square.fish = 0;
     }
+	//TODO check if net is full, if so, remove net and boat
+	
 
     //TODO handle boats chatting
+	int *r_msgs = (int *)malloc(sizeof(int) * 9);
+	assert(r_msgs != NULL);
+	int my_message = 0;
+	if(square.has_boat) {
+		my_message = 1;
+	}
+	MPI_Allgather(&my_message, 1, MPI_INT, r_msgs, 1, MPI_INT, MPI_COMM_WORLD);
+	if(square.rank==0) {
+	printf("%d %d %d %d %d %d %d %d %d\n", r_msgs[0], r_msgs[1],r_msgs[2],r_msgs[3],r_msgs[4],r_msgs[5],r_msgs[6],r_msgs[7],r_msgs[8]);
+	}
 }
