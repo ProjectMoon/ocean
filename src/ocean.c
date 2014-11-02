@@ -16,14 +16,8 @@ int main (int argc, char** argv) {
     int rank, size;
     MPI_File fh;
     MPI_Info info;
-    MPI_Status status;
     
-
     MPI_Init(&argc, &argv);
-	MPI_Info_create(&info);
- 
-    char *file_name = "outputfile";
-    char buf[80];
 
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm grid;
@@ -31,13 +25,12 @@ int main (int argc, char** argv) {
     create_communicator(MPI_COMM_WORLD, &grid, 3, 3);
     MPI_Comm_rank(grid, &rank);
 
-    work(rank, grid);
-
-    int rc = MPI_File_open( MPI_COMM_WORLD, file_name, MPI_MODE_CREATE | MPI_MODE_RDWR, info, &fh);
-    sprintf(buf,"I'm %d of %d and I'm writing to the log\n",rank,size);
-    MPI_File_write_ordered(fh, buf,strlen(buf), MPI_CHAR, &status); 
-    rc = MPI_File_close(&fh);
+    initLogFile(rank,size);
     
+    work(rank, grid);
+    
+    closeLogFile();
+
     MPI_Finalize();
     return 0;
 }
@@ -82,7 +75,6 @@ int get_opposite(grid_square square, direction_t dir) {
     }
 }
 
-
 void work(int rank, MPI_Comm grid) {
     //Where am I?
     int coords[2];
@@ -112,7 +104,11 @@ void work(int rank, MPI_Comm grid) {
         .down = down
     };
 
-    printf("(%d) Starting with %d fish\n", rank, square.fish);
+    char startLine[80];
+    sprintf(startLine,"(%d) Starting with %d fish\n", rank, square.fish);
+    writeLine(startLine);
+
+    printf(startLine);
     
     int i = 0;
     for (; i<3 ; i++) {
