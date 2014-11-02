@@ -6,21 +6,21 @@
 /*
  * Write a line to the log.
  */
-void write_line2(char *line);
+void write_line(char *line);
 
 /*
  * Write information about a grid square.
  */
-void write_square2(grid_square square);
+void write_square(grid_square square);
 
 /*
  * Initializes a log file
  */
-void initLogFile2();
+void initLogFile();
 
 /*
  * Closes a log file
  */
-void closeLogFile2(void);
+void closeLogFile(void);
 
 #endif
