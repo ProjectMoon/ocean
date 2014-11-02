@@ -8,7 +8,7 @@ MPI_Info info;
 int size, rank;
 MPI_File fh;
 
-void initLogFile(void) {
+void initLogFile2() {
   char *logName = "./logFile.txt";
   
   MPI_Info_create(&info);
@@ -23,16 +23,16 @@ void initLogFile(void) {
   printf("Rank %d of %d achieved the file_open result %d for their log file.\n", rank, size, rc);
 }
 
-void closeLogFile(void) {
+void closeLogFile2(void) {
   MPI_File_close(&fh);
   printf("%d/%d closed their chunk of the log file.\n", rank, size);
 
 }
 
-void write_line(char *line) {
+void write_line2(char *line) {
   printf("%s\n", line);
 }
 
-void write_square(grid_square square) {
+void write_square2(grid_square square) {
   printf("I am square with coords (%d, %d)\n", square.x, square.y);
 }

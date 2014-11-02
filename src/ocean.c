@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <string.h>
 #include "ocean.h"
 #include "logging.h"
 
@@ -13,14 +14,16 @@
 
 int main (int argc, char** argv) {
     int rank, size;
-    MPI_Status status;
+    MPI_File fh;
     MPI_Info info;
+    MPI_Status status;
+    
 
     MPI_Init(&argc, &argv);
-
-    MPI_File fh;
-    char *file_name = "./outputfile.txt";
-    int buf[10];
+	MPI_Info_create(&info);
+ 
+    char *file_name = "outputfile";
+    char buf[80];
 
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm grid;
@@ -31,8 +34,8 @@ int main (int argc, char** argv) {
     work(rank, grid);
 
     int rc = MPI_File_open( MPI_COMM_WORLD, file_name, MPI_MODE_CREATE | MPI_MODE_RDWR, info, &fh);
-    buf[0] = size;
-    MPI_File_write_ordered(fh, buf, 1, MPI_INT, &status); 
+    sprintf(buf,"I'm %d of %d and I'm writing to the log\n",rank,size);
+    MPI_File_write_ordered(fh, buf,strlen(buf), MPI_CHAR, &status); 
     rc = MPI_File_close(&fh);
     
     MPI_Finalize();
@@ -112,7 +115,7 @@ void work(int rank, MPI_Comm grid) {
     printf("(%d) Starting with %d fish\n", rank, square.fish);
     
     int i = 0;
-    for (i; i<3 ; i++) {
+    for (; i<3 ; i++) {
         simulation_step(grid, square);
         sleep(1);
     }
@@ -137,7 +140,7 @@ void simulation_step(MPI_Comm grid, grid_square square) {
 
     int c = 0;
             
-    for (c; c < 4; c++) {
+    for (; c < 4; c++) {
         //if we are currently sending to the chosen node of the fish,
         //then we send them off. otherwise no fish go there.
         int fish_swimming, destination;

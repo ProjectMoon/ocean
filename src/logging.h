@@ -2,26 +2,25 @@
 #define LOGGING_H
 
 #include "ocean.h"
-#include "logging.c"
 
 /*
  * Write a line to the log.
  */
-void write_line(char *line);
+void write_line2(char *line);
 
 /*
  * Write information about a grid square.
  */
-void write_square(grid_square square);
+void write_square2(grid_square square);
 
 /*
  * Initializes a log file
  */
-void initLogFile(void);
+void initLogFile2();
 
 /*
  * Closes a log file
  */
-void closeLogFile(void);
+void closeLogFile2(void);
 
 #endif
