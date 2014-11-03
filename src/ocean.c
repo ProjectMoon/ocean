@@ -12,6 +12,9 @@
 #define EVENT_FISH 0
 #define EVENT_BOAT 1
 
+//Other helpful macros
+#define ARR_LEN(arr) ( sizeof(arr) / sizeof(arr[0]) )
+
 int main (int argc, char** argv) {
     int rank, size;
 	int x_size = 3;
@@ -83,7 +86,7 @@ void work(int rank, MPI_Comm grid) {
 
     //Randomly generate a number of fish (0 to 20). Modulus slightly
     //reduces randomness, but whatever.
-    srand(rank);
+    srand(time(NULL) + rank);
     int fish = rand() % 21;
     
     //TODO randomly determine these values
@@ -124,7 +127,7 @@ void simulation_step(MPI_Comm grid, grid_square square) {
     MPI_Request reqs[8]; //4 send, 4 receive.
     MPI_Status statuses[8];
 
-    int fish_arrived = 0; //must init or else ptr misbehaves.
+    int fish_arrived[4] = { 0 }; //for each incoming direction.
             
     for (int c = 0; c < 4; c++) {
         //if we are currently sending to the chosen node of the fish,
@@ -144,17 +147,25 @@ void simulation_step(MPI_Comm grid, grid_square square) {
         //get fish arrivals from the opposite direction.
         int opposite;
         opposite = get_opposite(square, c);
-        MPI_Irecv(&fish_arrived, 1, MPI_INT, opposite, EVENT_FISH, grid, &reqs[c + 4]);
+        MPI_Irecv(&fish_arrived[c], 1, MPI_INT, opposite, EVENT_FISH, grid, &reqs[c + 4]);
     }
 
     MPI_Waitall(8, reqs, statuses);
 
     if (fish_arrived > 0) {
-        square.fish += fish_arrived;
-        printf("(%d, %d) received %d fish\n", square.x, square.y, fish_arrived);
+        int total_fish_arrived = 0;
+        
+        for (int c = 0; c < ARR_LEN(fish_arrived); c++) {
+            total_fish_arrived += fish_arrived[c];
+        }
+
+        square.fish += total_fish_arrived;
+        
+        printf("(%d, %d) received %d fish\n", square.x, square.y, total_fish_arrived);
     }
     
-    if (square.has_net) {
+    if (square.has_net && square.fish > 0) {
+        printf("(%d, %d) caught %d fish\n", square.x, square.y, square.fish);
         square.fish_caught += square.fish;
         square.fish = 0;
     }
