@@ -5,6 +5,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <assert.h>
+#include <string.h>
 #include "ocean.h"
 #include "logging.h"
 
@@ -171,20 +172,16 @@ void simulation_step(MPI_Comm grid, grid_square square) {
     }
 	//TODO check if net is full, if so, remove net and boat
 	
-
-    //TODO handle boats chatting
 	// Klemmi messing around with messages
-	char *messages[5] = {"AAA", "BBB", "CCC", "DDD", "EEE"};
-	// Can't get the received messages to become a array of strings, just single characters, like the messages...
-	// probably something very simple
-	char *r_msgs = (char *)malloc(sizeof(char) * 9);
-	assert(r_msgs != NULL);
+	char *messages[2] = {"|               |", "|I'm on a boat!|"};
 	char *my_message = messages[0];
 	if(square.has_boat) {
 		my_message = messages[1];
 	}
-	MPI_Allgather(my_message, 1, MPI_CHAR, r_msgs, 1, MPI_CHAR, MPI_COMM_WORLD);
+	char *r_msgs = (char *)malloc(sizeof(char) * 144);
+	assert(r_msgs != NULL);
+	MPI_Allgather(my_message, 16, MPI_CHAR, r_msgs, 16, MPI_CHAR, MPI_COMM_WORLD);
 	if(square.rank==0) {
-	printf("%c %c %c %c %c %c %c %c %c %s \n", r_msgs[0], r_msgs[1], r_msgs[2], r_msgs[3], r_msgs[4], r_msgs[5], r_msgs[6], r_msgs[7], r_msgs[8], my_message);
+	printf("%s \n",  r_msgs);
 	}
 }
