@@ -28,7 +28,7 @@ int main (int argc, char** argv) {
     create_communicator(MPI_COMM_WORLD, &grid, x_size, y_size);
     MPI_Comm_rank(grid, &rank);
 
-    work(rank, grid);
+    work(rank, size, grid);
     
     MPI_Finalize();
     return 0;
@@ -74,7 +74,7 @@ int get_opposite(grid_square square, direction_t dir) {
     }
 }
 
-void work(int rank, MPI_Comm grid) {
+void work(int rank, int size, MPI_Comm grid) {
 	
     //Where am I?
     int coords[2];
@@ -107,12 +107,12 @@ void work(int rank, MPI_Comm grid) {
     printf("(%d) Starting with %d fish\n", rank, square.fish);
     
     while (true) {
-        simulation_step(grid, square);
+        simulation_step(grid, square, size);
         sleep(1);
     }
 }
 
-void simulation_step(MPI_Comm grid, grid_square square) {
+void simulation_step(MPI_Comm grid, grid_square square, int size) {
     //this really only covers fish that start in the square in the
     //beginning. -Should be okay, since moving fish will then be caught in the beginning
 	//of the next timestep
@@ -171,17 +171,19 @@ void simulation_step(MPI_Comm grid, grid_square square) {
         square.fish = 0;
     }
 	//TODO check if net is full, if so, remove net and boat
-	
-	// Klemmi messing around with messages
-	char *messages[2] = {"|               |", "|I'm on a boat!|"};
-	char *my_message = messages[0];
+	int msgLength = 16;
+	char *messages[6] = {"|LOUD NOISES!!!|", "|I'm on a boat!|", "|Dance with me!|", "|Mambo number 5|", "|I like flowers|", "|Sail with me..|"};
+	char *my_message = "|              |";
+	int randmsg;
 	if(square.has_boat) {
-		my_message = messages[1];
+		randmsg = rand() % 5;
+		my_message = messages[randmsg];
 	}
-	char *r_msgs = (char *)malloc(sizeof(char) * 144);
+	char *r_msgs = (char *)malloc(sizeof(char) * size*msgLength);
 	assert(r_msgs != NULL);
-	MPI_Allgather(my_message, 16, MPI_CHAR, r_msgs, 16, MPI_CHAR, MPI_COMM_WORLD);
+	MPI_Allgather(my_message, msgLength, MPI_CHAR, r_msgs, msgLength, MPI_CHAR, MPI_COMM_WORLD);
 	if(square.rank==0) {
 	printf("%s \n",  r_msgs);
 	}
+	free(r_msgs);
 }
