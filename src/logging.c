@@ -32,4 +32,4 @@ void writeLine(char *line) {
 
 void write_square(grid_square square) {
     printf("I am square with coords (%d, %d)\n", square.x, square.y);
-} 
+}
