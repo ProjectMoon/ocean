@@ -115,12 +115,12 @@ void work(int rank, int size, MPI_Comm grid) {
     }
 }
 
-void simulation_step(MPI_Comm grid, struct grid_square* squarePointer, int size) {
-    struct grid_square square;
-	square = *squarePointer;
+void simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
+    //struct grid_square square;
+	//square = *squarePointer;
     //send fish swimming and receive incoming fish from neighbours
     direction_t dir = rand() % 5;
-    int fish_dest = get_adjacent(square, dir);
+    int fish_dest = get_adjacent(*square, dir);
 
     MPI_Request reqs[8]; //4 send, 4 receive.
     MPI_Status statuses[8];
@@ -131,10 +131,10 @@ void simulation_step(MPI_Comm grid, struct grid_square* squarePointer, int size)
         //if we are currently sending to the chosen node of the fish,
         //then we send them off. otherwise no fish go there.
         int fish_swimming, destination;
-        destination = get_adjacent(square, c);
+        destination = get_adjacent(*square, c);
         
         if (destination == fish_dest && fish_dest != MPI_PROC_NULL) {
-            fish_swimming = square.fish;
+            fish_swimming = square->fish;
         }
         else {
             fish_swimming = 0;
@@ -144,7 +144,7 @@ void simulation_step(MPI_Comm grid, struct grid_square* squarePointer, int size)
 
         //get fish arrivals from the opposite direction.
         int opposite;
-        opposite = get_opposite(square, c);
+        opposite = get_opposite(*square, c);
         MPI_Irecv(&fish_arrived[c], 1, MPI_INT, opposite, EVENT_FISH, grid, &reqs[c + 4]);
     }
 
@@ -157,31 +157,31 @@ void simulation_step(MPI_Comm grid, struct grid_square* squarePointer, int size)
 			total_fish_arrived += fish_arrived[c];
 		}
 
-		square.fish += total_fish_arrived;
-		if (square.x == 0 && square.y == 0) {
-			printf("%d (%d, %d) received %d fish, now the fish are %d\n", square.rank, square.x, square.y, total_fish_arrived, square.fish);
+		square->fish += total_fish_arrived;
+		if (square->x == 0 && square->y == 0) {
+			printf("%d (%d, %d) received %d fish, now the fish are %d\n", square->rank, square->x, square->y, total_fish_arrived, square->fish);
 		}
     }
 	
 	//Put fish in square into the net.  If net is full, remove boat and net
 	//Jeff: I simplified it, so that the boat and net are in the same square, we can change it later
-	if (square.rank == 0) {
-		printf("I'm the rank %d, left to fill net %d \n", square.rank, square.fish_leftToFillNet);
-		if ((square.has_net == true) && (square.fish > 0)) {
-			if (square.fish_leftToFillNet > square.fish) {
+	if (square->rank == 0) {
+		printf("I'm the rank %d, left to fill net %d \n", square->rank, square->fish_leftToFillNet);
+		if ((square->has_net == true) && (square->fish > 0)) {
+			if (square->fish_leftToFillNet > square->fish) {
 				//printf("%d (%d, %d) caught %d fish \n", square.rank, square.x, square.y,  square.fish);
-				square.fish_leftToFillNet -= square.fish;
-				square.fish = 0;
+				square->fish_leftToFillNet -= square->fish;
+				square->fish = 0;
 				//printf("%d Fish in square at end of timestep: %d\n", square.rank, square.fish);
 				//printf("%d (%d, %d) Fish remaining to fill net %d\n", square.rank, square.x, square.y, square.fish_leftToFillNet);
 			}
 			else {
-				printf("%d (%d, %d) I'm finishing!!! Caught all %d fish\n", square.rank, square.x, square.y,  square.fish_leftToFillNet);
-				square.fish -= square.fish_leftToFillNet;
-				square.fish_leftToFillNet = 0;
+				printf("%d (%d, %d) I'm finishing!!! Caught all %d fish\n", square->rank, square->x, square->y,  square->fish_leftToFillNet);
+				square->fish -= square->fish_leftToFillNet;
+				square->fish_leftToFillNet = 0;
 				//printf("%d Fish in square at end of timestep: %d\n", square.rank, square.fish);
-				square.has_net = false;
-				square.has_boat = false;
+				square->has_net = false;
+				square->has_boat = false;
 			}
 		}
 	}
@@ -190,17 +190,17 @@ void simulation_step(MPI_Comm grid, struct grid_square* squarePointer, int size)
 	char *messages[6] = {"|LOUD NOISES!!!|", "|I'm on a boat!|", "|Dance with me!|", "|Mambo number 5|", "|I like flowers|", "|Sail with me..|"};
 	char *my_message = "|              |";
 	int randmsg;
-	if(square.has_boat) {
+	if(square->has_boat) {
 		randmsg = rand() % 5;
 		my_message = messages[randmsg];
 	}
 	char *r_msgs = (char *)malloc(sizeof(char) * size*msgLength);
 	assert(r_msgs != NULL);
 	MPI_Allgather(my_message, msgLength, MPI_CHAR, r_msgs, msgLength, MPI_CHAR, MPI_COMM_WORLD);
-	if(square.rank==0) {
+	//if(square.rank==0) {
 	//printf("%s \n",  r_msgs);
-	}
+	// }
 	free(r_msgs);
 	
-	*squarePointer = square;
+	//*squarePointer = square;
 }
