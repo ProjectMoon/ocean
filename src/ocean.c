@@ -94,7 +94,7 @@ void work(int rank, int size, MPI_Comm grid) {
     grid_square square = {
 		.has_boat = (rank % 3 == 0),
         .has_net = (rank % 3 == 0), //every 3rd square has a net
-		.fish_remaining = 10,
+		.fish_leftToFillNet = 10,
         .fish = fish,
         .rank = rank,
         .x = coords[0],
@@ -109,7 +109,8 @@ void work(int rank, int size, MPI_Comm grid) {
 	printf("(%d, %d) Starting with %d fish\n", square.x, square.y, square.fish);
 	sleep(1);
 	
-    while (true) {
+    for (int i = 0; i < 4; i++) {
+		printf("%d %d I'm in the for loop, iteration %d \n", square.rank, rank, i);
         simulation_step(grid, square, size);
         sleep(1);
     }
@@ -158,30 +159,35 @@ void simulation_step(MPI_Comm grid, grid_square square, int size) {
 
 		square.fish += total_fish_arrived;
 		if (square.x == 0 && square.y == 0) {
-			printf("(%d, %d) received %d fish, now the fish are %d\n", square.x, square.y, total_fish_arrived, square.fish);
+			printf("%d (%d, %d) received %d fish, now the fish are %d\n", square.rank, square.x, square.y, total_fish_arrived, square.fish);
 		}
     }
 	
 	//Put fish in square into the net.  If net is full, remove boat and net
 	//Jeff: I simplified it, so that the boat and net are in the same square, we can change it later
-	if (square.x == 0 && square.y == 0 && square.has_net && (square.fish > 0)) {
-		if (square.fish_remaining > square.fish) {
-			printf("(%d, %d) caught %d fish \n", square.x, square.y, square.fish);
-			square.fish_remaining -= square.fish;
+	if (square.rank == 0) {
+	printf("I'm the rank %d, left to fill net %d \n", square.rank);
+	if ((square.has_net == true) && (square.fish > 0)) {
+		
+		
+		
+		if (square.fish_leftToFillNet > square.fish) {
+			printf("%d (%d, %d) caught %d fish \n", square.rank, square.x, square.y,  square.fish);
+			square.fish_leftToFillNet -= square.fish;
 			square.fish = 0;
-			printf("%d\n", square.fish);
-			printf("(%d, %d) Fish remaining to fill net %d\n", square.x, square.y, square.fish_remaining);
+			printf("%d Fish in square at end of timestep: %d\n", square.rank, square.fish);
+			printf("%d (%d, %d) Fish remaining to fill net %d\n", square.rank, square.x, square.y, square.fish_leftToFillNet);
 		}
 		else {
-			printf("(%d, %d) I'm finishing!!! \n", square.x, square.y);
-			printf("(%d, %d) caught all %d fish\n", square.x, square.y, square.fish_remaining);
-			square.fish -= square.fish_remaining;
-			square.fish_remaining = 0;
-			printf("%d\n", square.fish);
-			square.has_net = 0;
-			square.has_boat = 0;
+			printf("%d (%d, %d) I'm finishing!!! Caught all %d fish\n", square.rank, square.x, square.y,  square.fish_leftToFillNet);
+			square.fish -= square.fish_leftToFillNet;
+			square.fish_leftToFillNet = 0;
+			printf("%d Fish in square at end of timestep: %d\n", square.rank, square.fish);
+			square.has_net = false;
+			square.has_boat = false;
         }
     }
+	}
 	
 	int msgLength = 16;
 	char *messages[6] = {"|LOUD NOISES!!!|", "|I'm on a boat!|", "|Dance with me!|", "|Mambo number 5|", "|I like flowers|", "|Sail with me..|"};

@@ -7,12 +7,12 @@
 /*
  * fish: number of fish in the square. for each fish, swim away!
  * net: yes or no. if there is a net, all fish that enter are caught.
- * fish_remaining: remaining space in the net. should be 0 if net = false.
+ * fish_leftToFillNet: remaining space in the net. should be 0 if net = false.
  * boat: yes or no. whether or not there is a boat.
  */
 typedef struct {
     int fish;
-	int fish_remaining;
+	int fish_leftToFillNet;
     bool has_net;
     bool has_boat;
 
