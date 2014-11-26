@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "ocean.h"
+//#include "ocean.h"
 #include "logging.h"
 
 /* Declarations */
@@ -16,7 +16,7 @@ void initLogFile(int rank,int size) {
 
     /*printf("Rank %d of %d has initialized their log file.\n", rank, size);*/
 
-    int rc = MPI_File_open( MPI_COMM_WORLD, file_name, MPI_MODE_CREATE | MPI_MODE_RDWR, info, &fh);
+    MPI_File_open( MPI_COMM_WORLD, file_name, MPI_MODE_CREATE | MPI_MODE_RDWR, info, &fh);
     sprintf(buf,"I'm %d of %d and I'm writing to the log\n",rank,size);
     MPI_File_write_ordered(fh, buf, strlen(buf), MPI_CHAR, &status); 
 }

@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <string.h>
 #include "ocean.h"
-#include "logging.h"
+//#include "logging.h"
 
 //Defines: event types for various oceanic commuication
 #define EVENT_FISH 0
@@ -75,7 +75,6 @@ int get_opposite(grid_square square, direction_t dir) {
 }
 
 void work(int rank, int size, MPI_Comm grid) {
-	
     //Where am I?
     int coords[2];
     MPI_Cart_coords(grid, rank, 2, coords);
@@ -117,7 +116,6 @@ void work(int rank, int size, MPI_Comm grid) {
 }
 
 void simulation_step(MPI_Comm grid, grid_square square, int size) {
-
     //send fish swimming and receive incoming fish from neighbours
     direction_t dir = rand() % 5;
     int fish_dest = get_adjacent(square, dir);
@@ -166,7 +164,7 @@ void simulation_step(MPI_Comm grid, grid_square square, int size) {
 	//Put fish in square into the net.  If net is full, remove boat and net
 	//Jeff: I simplified it, so that the boat and net are in the same square, we can change it later
 	if (square.rank == 0) {
-	printf("I'm the rank %d, left to fill net %d \n", square.rank);
+	printf("I'm the rank %d, left to fill net \n", square.rank);
 	if ((square.has_net == true) && (square.fish > 0)) {
 		
 		

@@ -1,8 +1,9 @@
 #ifndef LOGGING_H
 #define LOGGING_H
-
+#include <stdio.h>
+#include <string.h>
 #include "ocean.h"
-#include "logging.c"
+//#include "logging.c"
 
 /*
  * Write a line to the log.

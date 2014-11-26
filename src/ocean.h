@@ -15,11 +15,9 @@ typedef struct {
 	int fish_leftToFillNet;
     bool has_net;
     bool has_boat;
-
     int rank;
     int x;
     int y;
-
     int left;
     int right;
     int up;
