@@ -109,13 +109,15 @@ void work(int rank, int size, MPI_Comm grid) {
 	sleep(1);
 	
     for (int i = 0; i < 4; i++) {
-		printf("%d %d I'm in the for loop, iteration %d \n", square.rank, rank, i);
-        simulation_step(grid, square, size);
+		//printf("%d %d I'm in the for loop, iteration %d \n", square.rank, rank, i);
+        simulation_step(grid, &square, size);
         sleep(1);
     }
 }
 
-void simulation_step(MPI_Comm grid, grid_square square, int size) {
+void simulation_step(MPI_Comm grid, struct grid_square* squarePointer, int size) {
+    struct grid_square square;
+	square = *squarePointer;
     //send fish swimming and receive incoming fish from neighbours
     direction_t dir = rand() % 5;
     int fish_dest = get_adjacent(square, dir);
@@ -164,27 +166,24 @@ void simulation_step(MPI_Comm grid, grid_square square, int size) {
 	//Put fish in square into the net.  If net is full, remove boat and net
 	//Jeff: I simplified it, so that the boat and net are in the same square, we can change it later
 	if (square.rank == 0) {
-	printf("I'm the rank %d, left to fill net \n", square.rank);
-	if ((square.has_net == true) && (square.fish > 0)) {
-		
-		
-		
-		if (square.fish_leftToFillNet > square.fish) {
-			printf("%d (%d, %d) caught %d fish \n", square.rank, square.x, square.y,  square.fish);
-			square.fish_leftToFillNet -= square.fish;
-			square.fish = 0;
-			printf("%d Fish in square at end of timestep: %d\n", square.rank, square.fish);
-			printf("%d (%d, %d) Fish remaining to fill net %d\n", square.rank, square.x, square.y, square.fish_leftToFillNet);
+		printf("I'm the rank %d, left to fill net %d \n", square.rank, square.fish_leftToFillNet);
+		if ((square.has_net == true) && (square.fish > 0)) {
+			if (square.fish_leftToFillNet > square.fish) {
+				//printf("%d (%d, %d) caught %d fish \n", square.rank, square.x, square.y,  square.fish);
+				square.fish_leftToFillNet -= square.fish;
+				square.fish = 0;
+				//printf("%d Fish in square at end of timestep: %d\n", square.rank, square.fish);
+				//printf("%d (%d, %d) Fish remaining to fill net %d\n", square.rank, square.x, square.y, square.fish_leftToFillNet);
+			}
+			else {
+				printf("%d (%d, %d) I'm finishing!!! Caught all %d fish\n", square.rank, square.x, square.y,  square.fish_leftToFillNet);
+				square.fish -= square.fish_leftToFillNet;
+				square.fish_leftToFillNet = 0;
+				//printf("%d Fish in square at end of timestep: %d\n", square.rank, square.fish);
+				square.has_net = false;
+				square.has_boat = false;
+			}
 		}
-		else {
-			printf("%d (%d, %d) I'm finishing!!! Caught all %d fish\n", square.rank, square.x, square.y,  square.fish_leftToFillNet);
-			square.fish -= square.fish_leftToFillNet;
-			square.fish_leftToFillNet = 0;
-			printf("%d Fish in square at end of timestep: %d\n", square.rank, square.fish);
-			square.has_net = false;
-			square.has_boat = false;
-        }
-    }
 	}
 	
 	int msgLength = 16;
@@ -202,4 +201,6 @@ void simulation_step(MPI_Comm grid, grid_square square, int size) {
 	//printf("%s \n",  r_msgs);
 	}
 	free(r_msgs);
+	
+	*squarePointer = square;
 }

@@ -10,7 +10,7 @@
  * fish_leftToFillNet: remaining space in the net. should be 0 if net = false.
  * boat: yes or no. whether or not there is a boat.
  */
-typedef struct {
+typedef struct grid_square {
     int fish;
 	int fish_leftToFillNet;
     bool has_net;
@@ -66,7 +66,7 @@ void create_communicator(MPI_Comm input, MPI_Comm *comm, int x, int y);
  * messages from its neighbors, and then send them out to its
  * neighbors.
  */
-void simulation_step(MPI_Comm grid, grid_square square, int size);
+void simulation_step(MPI_Comm grid, grid_square* squarePointer, int size);
 
 /*
  * Do the thing.
