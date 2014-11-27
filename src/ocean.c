@@ -91,9 +91,9 @@ void work(int rank, int size, MPI_Comm grid) {
     
     //TODO randomly determine these values
     grid_square square = {
-		.has_boat = (rank % 3 == 0),
-        .has_net = (rank % 3 == 0), //every 3rd square has a net
-		.fish_leftToFillNet = 10,
+		.has_boat = (rank % 5 == 0),
+        .has_net = (rank % 5 == 0), //every 3rd square has a net
+		.fish_leftToFillNet = 1,
         .fish = fish,
         .rank = rank,
         .x = coords[0],
@@ -108,10 +108,14 @@ void work(int rank, int size, MPI_Comm grid) {
 	printf("(%d, %d) Starting with %d fish\n", square.x, square.y, square.fish);
 	sleep(1);
 	int finish = 0;
-    while (finish == 0) {
-        printf("I'm %d and I'm still running...\n", rank);
-		finish = simulation_step(grid, &square, size);
+	
+    for (int i = 0; i < 10; i++) {
+		//printf("%d %d I'm in the for loop, iteration %d \n", square.rank, rank, i);
+        finish = simulation_step(grid, &square, size);
         sleep(1);
+		// if (finish == 1) {
+			// printf("---I'm %d and I want to stop the iteration.---\n",square.rank);
+		// }
     }
 }
 
@@ -126,7 +130,8 @@ int simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
     MPI_Status statuses[8];
 
     int fish_arrived[4] = { 0 }; //for each incoming direction.
-            
+	int total_fish_sent = 0;
+		
     for (int c = 0; c < 4; c++) {
         //if we are currently sending to the chosen node of the fish,
         //then we send them off. otherwise no fish go there.
@@ -135,6 +140,7 @@ int simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
         
         if (destination == fish_dest && fish_dest != MPI_PROC_NULL) {
             fish_swimming = square->fish;
+			total_fish_sent += fish_swimming;
         }
         else {
             fish_swimming = 0;
@@ -156,22 +162,41 @@ int simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
         for (int c = 0; c < ARR_LEN(fish_arrived); c++) {
 			total_fish_arrived += fish_arrived[c];
 		}
+
 		square->fish += total_fish_arrived;
+		square->fish -= total_fish_sent;
+		
+		//if (square->x == 0 && square->y == 0) {
+		printf("%d (%d, %d) received %d fish, sent %d fish, now the fish are %d\n", square->rank, square->x, square->y, total_fish_arrived, total_fish_sent, square->fish);
+		// }
     }
 	
 	//Put fish in square into the net.  If net is full, remove boat and net
 	if ((square->has_net == true) && (square->fish > 0)) {
+		printf("I'm the rank %d, I'm catching fish with my net. Left to fill net %d \n", square->rank, square->fish_leftToFillNet);
 		if (square->fish_leftToFillNet > square->fish) {
+			//printf("%d (%d, %d) caught %d fish \n", square->rank, square->x, square->y,  square->fish);
 			square->fish_leftToFillNet -= square->fish;
 			square->fish = 0;
-			printf("I'm the rank %d, left to fill net %d \n", square->rank, square->fish_leftToFillNet);
+			//printf("%d Fish in square at end of timestep: %d\n", square->rank, square->fish);
+			//printf("%d (%d, %d) Fish remaining to fill net %d\n", square->rank, square->x, square->y, square->fish_leftToFillNet);
 		}
 		else {
 			printf("%d (%d, %d) I'm finishing!!! Caught all %d fish\n", square->rank, square->x, square->y,  square->fish_leftToFillNet);
 			square->fish -= square->fish_leftToFillNet;
 			square->fish_leftToFillNet = 0;
+			//printf("%d Fish in square at end of timestep: %d\n", square->rank, square->fish);
 			square->has_net = false;
 			square->has_boat = false;
+		}
+	}
+	
+	if (square->has_net == true) {
+		if (square->fish_leftToFillNet == 0) {
+			printf("%d (%d, %d) My net is full! \n", square->rank, square->x, square->y);
+		}
+		else {
+			printf("%d (%d, %d) My net is not full! Still room for %d more fish \n", square->rank, square->x, square->y, square->fish_leftToFillNet);
 		}
 	}
 	
@@ -189,15 +214,16 @@ int simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
 	if(square->rank==0) {
 		printf("%s \n",  r_msgs);
 	}
-	int stillBoats = 0;
-	if((strcmp(r_msgs,"|              ||              ||              ||              ||              ||              ||              ||              ||              |") != 0)) {
-			stillBoats = 1;
+	int stillBoats = 1;
+	if((strcmp(r_msgs,"|              ||              ||              ||              ||              ||              ||              ||              ||              |") == 0)) {
+		printf("All messages are empty (all nets full)! \n");
+		stillBoats = 0;
 	}
 	free(r_msgs);
-	if (stillBoats == 0) {
-		return 1;
+	if (stillBoats == 1) {
+		return 0;
 	}
 	else {
-		return 0;
+		return 1;
 	}
 }
