@@ -126,7 +126,8 @@ void simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
     MPI_Status statuses[8];
 
     int fish_arrived[4] = { 0 }; //for each incoming direction.
-            
+	int total_fish_sent = 0;
+		
     for (int c = 0; c < 4; c++) {
         //if we are currently sending to the chosen node of the fish,
         //then we send them off. otherwise no fish go there.
@@ -135,6 +136,7 @@ void simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
         
         if (destination == fish_dest && fish_dest != MPI_PROC_NULL) {
             fish_swimming = square->fish;
+			total_fish_sent += fish_swimming;
         }
         else {
             fish_swimming = 0;
@@ -158,14 +160,16 @@ void simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
 		}
 
 		square->fish += total_fish_arrived;
-		if (square->x == 0 && square->y == 0) {
-			printf("%d (%d, %d) received %d fish, now the fish are %d\n", square->rank, square->x, square->y, total_fish_arrived, square->fish);
-		}
+		square->fish -= total_fish_sent;
+		
+		//if (square->x == 0 && square->y == 0) {
+		printf("%d (%d, %d) received %d fish, sent %d fish, now the fish are %d\n", square->rank, square->x, square->y, total_fish_arrived, total_fish_sent, square->fish);
+		// }
     }
 	
 	//Put fish in square into the net.  If net is full, remove boat and net
-	printf("I'm the rank %d, left to fill net %d \n", square->rank, square->fish_leftToFillNet);
 	if ((square->has_net == true) && (square->fish > 0)) {
+		printf("I'm the rank %d, I'm catching fish with my net. Left to fill net %d \n", square->rank, square->fish_leftToFillNet);
 		if (square->fish_leftToFillNet > square->fish) {
 			//printf("%d (%d, %d) caught %d fish \n", square->rank, square->x, square->y,  square->fish);
 			square->fish_leftToFillNet -= square->fish;
@@ -180,6 +184,15 @@ void simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
 			//printf("%d Fish in square at end of timestep: %d\n", square->rank, square->fish);
 			square->has_net = false;
 			square->has_boat = false;
+		}
+	}
+	
+	if (square->has_net == true) {
+		if (square->fish_leftToFillNet == 0) {
+			printf("%d (%d, %d) My net is full! \n", square->rank, square->x, square->y);
+		}
+		else {
+			printf("%d (%d, %d) My net is not full! Still room for %d more fish \n", square->rank, square->x, square->y, square->fish_leftToFillNet);
 		}
 	}
 	
@@ -198,6 +211,4 @@ void simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
 	//printf("%s \n",  r_msgs);
 	// }
 	free(r_msgs);
-	
-	//*squarePointer = square;
 }
