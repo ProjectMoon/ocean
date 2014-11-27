@@ -164,25 +164,22 @@ void simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
     }
 	
 	//Put fish in square into the net.  If net is full, remove boat and net
-	//Jeff: I simplified it, so that the boat and net are in the same square, we can change it later
-	if (square->rank == 0) {
-		printf("I'm the rank %d, left to fill net %d \n", square->rank, square->fish_leftToFillNet);
-		if ((square->has_net == true) && (square->fish > 0)) {
-			if (square->fish_leftToFillNet > square->fish) {
-				//printf("%d (%d, %d) caught %d fish \n", square.rank, square.x, square.y,  square.fish);
-				square->fish_leftToFillNet -= square->fish;
-				square->fish = 0;
-				//printf("%d Fish in square at end of timestep: %d\n", square.rank, square.fish);
-				//printf("%d (%d, %d) Fish remaining to fill net %d\n", square.rank, square.x, square.y, square.fish_leftToFillNet);
-			}
-			else {
-				printf("%d (%d, %d) I'm finishing!!! Caught all %d fish\n", square->rank, square->x, square->y,  square->fish_leftToFillNet);
-				square->fish -= square->fish_leftToFillNet;
-				square->fish_leftToFillNet = 0;
-				//printf("%d Fish in square at end of timestep: %d\n", square.rank, square.fish);
-				square->has_net = false;
-				square->has_boat = false;
-			}
+	printf("I'm the rank %d, left to fill net %d \n", square->rank, square->fish_leftToFillNet);
+	if ((square->has_net == true) && (square->fish > 0)) {
+		if (square->fish_leftToFillNet > square->fish) {
+			//printf("%d (%d, %d) caught %d fish \n", square->rank, square->x, square->y,  square->fish);
+			square->fish_leftToFillNet -= square->fish;
+			square->fish = 0;
+			//printf("%d Fish in square at end of timestep: %d\n", square->rank, square->fish);
+			//printf("%d (%d, %d) Fish remaining to fill net %d\n", square->rank, square->x, square->y, square->fish_leftToFillNet);
+		}
+		else {
+			printf("%d (%d, %d) I'm finishing!!! Caught all %d fish\n", square->rank, square->x, square->y,  square->fish_leftToFillNet);
+			square->fish -= square->fish_leftToFillNet;
+			square->fish_leftToFillNet = 0;
+			//printf("%d Fish in square at end of timestep: %d\n", square->rank, square->fish);
+			square->has_net = false;
+			square->has_boat = false;
 		}
 	}
 	
