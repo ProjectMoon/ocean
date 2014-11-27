@@ -164,6 +164,7 @@ int simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
 		if (square->fish_leftToFillNet > square->fish) {
 			square->fish_leftToFillNet -= square->fish;
 			square->fish = 0;
+			printf("I'm the rank %d, left to fill net %d \n", square->rank, square->fish_leftToFillNet);
 		}
 		else {
 			printf("%d (%d, %d) I'm finishing!!! Caught all %d fish\n", square->rank, square->x, square->y,  square->fish_leftToFillNet);
