@@ -66,7 +66,7 @@ void create_communicator(MPI_Comm input, MPI_Comm *comm, int x, int y);
  * messages from its neighbors, and then send them out to its
  * neighbors.
  */
-void simulation_step(MPI_Comm grid, grid_square* square, int size);
+int simulation_step(MPI_Comm grid, grid_square* square, int size);
 
 /*
  * Do the thing.

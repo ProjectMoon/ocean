@@ -9,7 +9,7 @@
 #include "ocean.h"
 //#include "logging.h"
 
-//Defines: event types for various oceanic commuication
+//Defines: event types for various oceanic communication
 #define EVENT_FISH 0
 #define EVENT_BOAT 1
 
@@ -79,7 +79,7 @@ void work(int rank, int size, MPI_Comm grid) {
     int coords[2];
     MPI_Cart_coords(grid, rank, 2, coords);
 
-    //Get neighbors. dim 0 = columns, dim 1 = rows
+    //Get neighbours. dim 0 = columns, dim 1 = rows
     int left, right, up, down;
     MPI_Cart_shift(grid, 0, 1, &up, &down);
     MPI_Cart_shift(grid, 1, 1, &left, &right);
@@ -107,15 +107,15 @@ void work(int rank, int size, MPI_Comm grid) {
 	
 	printf("(%d, %d) Starting with %d fish\n", square.x, square.y, square.fish);
 	sleep(1);
-	
-    for (int i = 0; i < 4; i++) {
-		//printf("%d %d I'm in the for loop, iteration %d \n", square.rank, rank, i);
-        simulation_step(grid, &square, size);
+	int finish = 0;
+    while (finish == 0) {
+        printf("I'm %d and I'm still running...\n", rank);
+		finish = simulation_step(grid, &square, size);
         sleep(1);
     }
 }
 
-void simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
+int simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
     //struct grid_square square;
 	//square = *squarePointer;
     //send fish swimming and receive incoming fish from neighbours
@@ -156,33 +156,21 @@ void simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
         for (int c = 0; c < ARR_LEN(fish_arrived); c++) {
 			total_fish_arrived += fish_arrived[c];
 		}
-
 		square->fish += total_fish_arrived;
-		if (square->x == 0 && square->y == 0) {
-			printf("%d (%d, %d) received %d fish, now the fish are %d\n", square->rank, square->x, square->y, total_fish_arrived, square->fish);
-		}
     }
 	
 	//Put fish in square into the net.  If net is full, remove boat and net
-	//Jeff: I simplified it, so that the boat and net are in the same square, we can change it later
-	if (square->rank == 0) {
-		printf("I'm the rank %d, left to fill net %d \n", square->rank, square->fish_leftToFillNet);
-		if ((square->has_net == true) && (square->fish > 0)) {
-			if (square->fish_leftToFillNet > square->fish) {
-				//printf("%d (%d, %d) caught %d fish \n", square.rank, square.x, square.y,  square.fish);
-				square->fish_leftToFillNet -= square->fish;
-				square->fish = 0;
-				//printf("%d Fish in square at end of timestep: %d\n", square.rank, square.fish);
-				//printf("%d (%d, %d) Fish remaining to fill net %d\n", square.rank, square.x, square.y, square.fish_leftToFillNet);
-			}
-			else {
-				printf("%d (%d, %d) I'm finishing!!! Caught all %d fish\n", square->rank, square->x, square->y,  square->fish_leftToFillNet);
-				square->fish -= square->fish_leftToFillNet;
-				square->fish_leftToFillNet = 0;
-				//printf("%d Fish in square at end of timestep: %d\n", square.rank, square.fish);
-				square->has_net = false;
-				square->has_boat = false;
-			}
+	if ((square->has_net == true) && (square->fish > 0)) {
+		if (square->fish_leftToFillNet > square->fish) {
+			square->fish_leftToFillNet -= square->fish;
+			square->fish = 0;
+		}
+		else {
+			printf("%d (%d, %d) I'm finishing!!! Caught all %d fish\n", square->rank, square->x, square->y,  square->fish_leftToFillNet);
+			square->fish -= square->fish_leftToFillNet;
+			square->fish_leftToFillNet = 0;
+			square->has_net = false;
+			square->has_boat = false;
 		}
 	}
 	
@@ -197,10 +185,18 @@ void simulation_step(MPI_Comm grid, struct grid_square* square, int size) {
 	char *r_msgs = (char *)malloc(sizeof(char) * size*msgLength);
 	assert(r_msgs != NULL);
 	MPI_Allgather(my_message, msgLength, MPI_CHAR, r_msgs, msgLength, MPI_CHAR, MPI_COMM_WORLD);
-	//if(square.rank==0) {
-	//printf("%s \n",  r_msgs);
-	// }
+	if(square->rank==0) {
+		printf("%s \n",  r_msgs);
+	}
+	int stillBoats = 0;
+	if((strcmp(r_msgs,"|              ||              ||              ||              ||              ||              ||              ||              ||              |") != 0)) {
+			stillBoats = 1;
+	}
 	free(r_msgs);
-	
-	//*squarePointer = square;
+	if (stillBoats == 0) {
+		return 1;
+	}
+	else {
+		return 0;
+	}
 }
