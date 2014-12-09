@@ -28,5 +28,10 @@
 *.x86_64
 *.hex
 
+# TeX
+*.aux
+*.log
+*.gz
+
 # Other
 user.in
